@@ -1,8 +1,11 @@
 import urllib.parse
 import requests
+from datetime import datetime, timedelta
 def fetch_data_from_link(url,webmaster_access_token):
-    start_date = "2025-03-01"
-    end_date = "2025-03-31"
+    end_date = datetime.today().date()
+    start_date = end_date - timedelta(days=29)
+    start_date = start_date.isoformat()
+    end_date = end_date.isoformat()
     request_data = {
     "startDate": start_date,
     "endDate": end_date,

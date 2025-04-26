@@ -105,7 +105,6 @@ if selected_sheet:
         download_excel(data, selected_sheet["name"])
         for item in data:
             with st.expander(item["link"]):
-                st.write(item)
                 download_excel(item, item["link"],button_label="Download Link Excel Sheet")
                 st.subheader("Suggested Title 1:")
                 st.write(item["suggested_title_1"])

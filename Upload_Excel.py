@@ -19,10 +19,6 @@ with st.form(form_key):
         label_visibility="collapsed",
     )
     submitted = st.form_submit_button("RUN LLM")
-    
-
-    
-    
     if submitted:
         if not openai_api_key.startswith("sk-"):
             st.warning("Please enter your OpenAI API key!", icon="⚠")

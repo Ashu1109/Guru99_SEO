@@ -25,7 +25,7 @@ if not st.session_state['authenticated']:
             st.error("Incorrect password. Access denied.")
 else:
     if st.session_state["admin"]:
-        pg = st.navigation(["Upload_Excel.py","Analysis_Result.py","Admin.py" ])
+        pg = st.navigation(["Upload_Excel.py","Analysis_Result.py","Admin.py","create_table.py" ])
     else:
         pg = st.navigation(["Upload_Excel.py","Analysis_Result.py"])
     pg.run()

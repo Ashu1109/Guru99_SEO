@@ -40,7 +40,6 @@ def top_15_KW(data):
     
     
     
-    file_path = "./https___www.guru99.com_best-iptv-services.html.xlsx"
     # queries_df = pd.read_excel(file_path, sheet_name='Queries')
 
     # Format the data["rows"] to have "keys" as a string instead of an array
@@ -60,7 +59,7 @@ def top_15_KW(data):
     top15 = counter.most_common(15)
     
     #  GSC Top KW Clicks
-    additional_keywords = [kw for kw, _ in top15[:5]]
+    additional_keywords = [kw for kw, _ in top15[:10]]
     results_add = []
     
     for kw in additional_keywords:
