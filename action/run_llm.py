@@ -2,15 +2,17 @@ from action.get_data import get_data
 from model.model import model
 from action.get_only_title import get_only_title
 import streamlit as st
+from pandas import DataFrame
+
 def run_llm(
     inserted_id,
     conn,
     cursor,
     query_data,
     input_link: str,
-    current_title: str,
-    clicks_in_title: str,
-    top_15_KW: str,
+    current_title: DataFrame,
+    clicks_in_title: DataFrame,
+    top_15_KW: DataFrame,
     GSC_Top_KW_Clicks: str,
 ):
     # Create the prompt
@@ -59,12 +61,31 @@ def run_llm(
             %s, %s, %s, %s, %s, %s, %s, %s, %s
         );
         """
+        
+    if isinstance(clicks_in_title, DataFrame):
+        clicks_in_title = clicks_in_title.to_string(index=True, header=False)
+    else:
+        clicks_in_title = str(clicks_in_title)
+
+    if isinstance(top_15_KW, DataFrame):
+        top_15_KW = top_15_KW.to_string(index=True, header=False)
+    else:
+        top_15_KW = str(top_15_KW)
+
+    if isinstance(GSC_Top_KW_Clicks, DataFrame):
+        GSC_Top_KW_Clicks = GSC_Top_KW_Clicks.to_string(index=True, header=False)
+    else:
+        GSC_Top_KW_Clicks = str(GSC_Top_KW_Clicks)
+        
+        
     # Ensure all values are strings before inserting into the database
     def to_str(val):
         if isinstance(val, list):
             return ','.join(map(str, val))
         return str(val)
+    
 
+    
     values = (
         inserted_id,
         input_link,

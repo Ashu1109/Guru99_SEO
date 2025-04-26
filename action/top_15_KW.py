@@ -68,4 +68,4 @@ def top_15_KW(data):
         total_clicks = int(queries_df.loc[mask, "clicks"].sum())
         results_add.append({"keyword": kw, "clicks": total_clicks})
     # Display results
-    return top15,results_add
+    return pd.DataFrame(top15),pd.DataFrame(results_add)

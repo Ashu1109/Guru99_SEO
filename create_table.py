@@ -188,3 +188,40 @@ def empty_tables():
         st.error("Failed to connect to the database")
 
 st.button("Empty link_analysis & excel_sheet", on_click=empty_tables)
+
+
+
+def create_password_table():
+    conn, cursor = connect_to_db()
+    st.write("Connected to database successfully")
+    if conn and cursor:
+        try:
+            create_query = """
+            CREATE TABLE IF NOT EXISTS password_table (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                password VARCHAR(255) NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+            """
+            cursor.execute(create_query)
+            conn.commit()
+            st.success("Table `password_table` created successfully.")
+        except Exception as e:
+            st.error(f"Error creating password_table: {e}")
+    else:
+        st.error("Failed to connect to the database")
+
+st.button("Create Password Table", on_click=create_password_table)
+
+
+
+
+def insert_password():
+    conn, cursor = connect_to_db()
+    st.write("Connected to database successfully")
+    password = "user123"
+    cursor.execute("INSERT INTO password_table (password) VALUES (%s);", (password,))
+    conn.commit()
+    st.write("Password inserted successfully.")
+
+st.button("insert password", on_click=insert_password)

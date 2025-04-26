@@ -13,7 +13,6 @@ def get_analysis(processed_array,file_name):
         clicks_of_words = item["clicks_of_words"]
         top15 = item["top15"]
         GSC_top_KW = item["GSC_top_KW"]
-        # Run the LLM analysis
         run_llm(
             inserted_id=inserted_id,
             conn=conn,
