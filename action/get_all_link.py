@@ -3,7 +3,7 @@ def get_all_link(id):
     conn, cursor = connect_to_db()
     if conn and cursor:
         # Fetch the data from the excel_sheet table
-        query = f"SELECT * FROM link_analysis WHERE excel_sheet_id = {id}"
+        query = f"SELECT * FROM link_analysis WHERE excel_sheet_id = {id} "
         cursor.execute(query)
         data = cursor.fetchall()
         
