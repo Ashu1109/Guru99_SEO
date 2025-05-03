@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from action.get_processed_array import access_token
 from test import get_filtered_links 
+from action.connect_to_db import connect_to_db
 st.write("create table")
 
 
@@ -233,4 +234,64 @@ st.button("info Table", on_click=get_data)
 #     st.write("Password inserted successfully.")
 
 # st.button("insert password", on_click=insert_password)
+
+
+
+def create_table():
+    conn, cursor = connect_to_db()
+    st.write("Connected to database successfully")
+    if conn and cursor:
+        table_name = "API"
+        if table_name:
+            try:
+                create_query = f"""
+                CREATE TABLE IF NOT EXISTS `{table_name}` (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    api_key VARCHAR(255) NOT NULL,
+                    created_date DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
+                """
+                cursor.execute(create_query)
+                conn.commit()
+                st.success(f"Table `{table_name}` created successfully.")
+            except Exception as e:
+                st.error(f"Error creating tables: {e}")
+        else:
+            st.warning("Please enter a table name.")
+
+
+st.button("Create Table", on_click=create_table)
+with st.form("insert_api_form"):
+    api_key = st.text_input("API Key")
+    submitted = st.form_submit_button("Insert API Key")
+    if submitted:
+        if api_key:
+            conn, cursor = connect_to_db()
+            if conn and cursor:
+                try:
+                    cursor.execute("INSERT INTO API (api_key) VALUES (%s);", (api_key,))
+                    conn.commit()
+                    st.success("API Key inserted successfully.")
+                except Exception as e:
+                    st.error(f"Error inserting API Key: {e}")
+            else:
+                st.error("Failed to connect to the database")
+        else:
+            st.warning("Please enter an API Key.")
+
+
+def fetch_api_key():
+                # Display the API table after insertion
+            try:
+                conn,cursor = connect_to_db()
+                cursor.execute("SELECT * FROM API;")
+                data = cursor.fetchall()
+                columns = [desc[0] for desc in cursor.description]
+                df = pd.DataFrame(data, columns=columns)
+                st.subheader("API Table")
+                st.dataframe(df)
+            except Exception as e:
+                st.error(f"Error fetching API table: {e}")
+
+st.button("Fetch API Key", on_click=fetch_api_key)
 

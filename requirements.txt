@@ -12,4 +12,4 @@ langchain-core>=0.3.52,<0.4.0
 mysql-connector-python
 bs4
 xlsxwriter
-openpyxl
+httpx
