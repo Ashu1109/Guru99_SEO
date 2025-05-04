@@ -62,7 +62,7 @@ with st.form(form_key):
                     processed_array = get_processed_array(link_title)
                     processed_array = make_script_data(processed_array)
                     res = get_analysis(processed_array,file_name)
-                    clear_api_key()
-                    openai_api_key = ""
+                    # clear_api_key()
+                    # openai_api_key = ""
                     excel_file = ""
                     st.header("Analysis Completed")
