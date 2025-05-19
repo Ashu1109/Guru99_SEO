@@ -43,6 +43,9 @@ def top_15_KW(data):
     # queries_df = pd.read_excel(file_path, sheet_name='Queries')
 
     # Format the data["rows"] to have "keys" as a string instead of an array
+    if "rows" not in data or not isinstance(data["rows"], list):
+        st.warning("No data available")
+        return pd.DataFrame(), pd.DataFrame()
     for row in data["rows"]:
         if "keys" in row and isinstance(row["keys"], list) and len(row["keys"]) > 0:
             row["keys"] = row["keys"][0]
@@ -67,4 +70,4 @@ def top_15_KW(data):
         total_clicks = int(queries_df.loc[mask, "clicks"].sum())
         results_add.append({"keyword": kw, "clicks": total_clicks})
     # Display results
-    return pd.DataFrame(top15),pd.DataFrame(results_add)
+    return  pd.DataFrame(top15),pd.DataFrame(results_add)

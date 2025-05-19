@@ -52,6 +52,8 @@ with st.form(form_key):
             st.warning("Please enter your OpenAI API key!", icon="⚠")
         if submitted and openai_api_key.startswith("sk-"):
             set_api_key(openai_api_key)
+            # Save API key to database if it's not already there
+            set_api_key_db(openai_api_key)
             if not excel_file:
                 st.warning("Both link and title are required. Please fill out the fields.")
             else:
@@ -62,7 +64,5 @@ with st.form(form_key):
                     processed_array = get_processed_array(link_title)
                     processed_array = make_script_data(processed_array)
                     res = get_analysis(processed_array,file_name)
-                    # clear_api_key()
-                    # openai_api_key = ""
                     excel_file = ""
                     st.header("Analysis Completed")

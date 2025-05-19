@@ -1,4 +1,6 @@
-oauth ={}
+oauth ={
+}
+
 
 
 def get_oauth_config():
