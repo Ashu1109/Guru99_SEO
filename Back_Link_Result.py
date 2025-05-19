@@ -112,9 +112,12 @@ else:
                 st.warning("No response data found")
     with st.expander(f"List of Backlinks"):
             seo = get_seo_data(backlinks[0]["id"])
-            for i, seo_data in enumerate(seo):
-                st.write(f"Link {i+1}: {seo_data["link"]}")
-                download_excel(seo_data, f"SEO_Data_{seo_data['id']}", button_label="Download Excel Data")
+            if not seo:
+                st.warning("No SEO data found for the selected backlink.")
+            else:
+                for i, seo_data in enumerate(seo):
+                    st.write(f"Link {i+1}: {seo_data['link']}")
+                    download_excel(seo_data, f"SEO_Data_{seo_data['id']}", button_label="Download Excel Data")
                 
 
 
