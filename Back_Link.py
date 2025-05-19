@@ -121,7 +121,20 @@ def get_data(backlink_url):
 
 
 
-
+import pandas as pd
+import streamlit as st
+from action.connect_to_db import connect_to_db
+def get_data_from_excel(excel_file):
+    conn, cursor = connect_to_db()
+    # Read the uploaded Excel file
+    try:
+        df = pd.read_excel(excel_file)
+        file_name = excel_file.name
+        return df,file_name
+    except FileNotFoundError:
+        st.error("File not found. Please check the file path.")
+    except Exception as e:
+        st.error(f"An error occurred while reading the Excel file: {e}")
 
 
 
@@ -135,27 +148,31 @@ def backlink_form():
         st.header("Backlink Input Form")
         
         with st.form("backlink_form"):
-            backlink_url = st.text_input("Enter backlink URL")
+            st.write("Upload link of Excel")
+            excel_file = st.file_uploader(
+                "Upload Excel file",
+                type=["xlsx"],
+                label_visibility="collapsed",
+            )
+            # backlink_url = st.text_input("Enter backlink URL")
             
             submitted = st.form_submit_button("Submit")
-            
             if submitted:
-                if not backlink_url:
+                df,file_name = get_data_from_excel(excel_file)
+                st.write("Excel file uploaded successfully!")
+                st.write("File Name:", file_name)
+                st.write(df)
+                if  df.empty:
                     st.error("Please enter a backlink URL")
                 else:
-                    # Display the submitted data
-                    st.success("Backlink submitted successfully!")
-                    backlink_data = {
-                    "url": backlink_url,
-                    "date_added": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
-                    }
-                    
-                    # Process the backlink data with a spinner and timer
-                    start_time = time.time()
-                    with st.spinner('Processing data... This may take a while'):
-                        get_data(backlink_url)
-                        execution_time = time.time() - start_time
-                        st.success(f"Processing completed in {execution_time:.2f} seconds")
+                    for index, row in df.iterrows():
+                        backlink_url = row[0]
+                        st.write(f"Processing backlink URL: {backlink_url}")
+                        start_time = time.time()
+                        with st.spinner('Processing data... This may take a while'):
+                            get_data(backlink_url)
+                            execution_time = time.time() - start_time
+                            st.success(f"Processing completed in {execution_time:.2f} seconds")
 
 backlink_form()
 

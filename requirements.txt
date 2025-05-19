@@ -13,3 +13,4 @@ mysql-connector-python
 bs4
 xlsxwriter
 httpx
+deep_translator
