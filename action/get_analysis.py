@@ -1,18 +1,14 @@
 from action.run_llm import run_llm
 from action.connect_to_db import connect_to_db
-def get_analysis(processed_array,file_name):
+def get_analysis(processed_item,inserted_id):
     conn,cursor = connect_to_db()
-    sql = "INSERT INTO excel_sheet (name) VALUES (%s)"
-    cursor.execute(sql, (file_name,))
-    conn.commit()
-    inserted_id = cursor.lastrowid
-    for item in processed_array:
-        link = item["link"]
-        title = item["title"]
-        query_data = item["query_data"]
-        clicks_of_words = item["clicks_of_words"]
-        top15 = item["top15"]
-        GSC_top_KW = item["GSC_top_KW"]
+    if conn and cursor:
+        link = processed_item["link"]
+        title = processed_item["title"]
+        query_data = processed_item["query_data"]
+        clicks_of_words = processed_item["clicks_of_words"]
+        top15 = processed_item["top15"]
+        GSC_top_KW = processed_item["GSC_top_KW"]
         run_llm(
             inserted_id=inserted_id,
             conn=conn,

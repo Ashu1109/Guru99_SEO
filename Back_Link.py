@@ -7,14 +7,19 @@ from action.create_title_for_links import get_title_for_links
 from action.fetch_data_from_link import fetch_data_from_link
 from action.get_click_of_words import get_click_of_words
 from action.top_15_KW import top_15_KW
-from action.get_total_calculation import get_total_calculation
 from deep_translator import GoogleTranslator
 from action.connect_to_db import connect_to_db
 from action.create_seo_table import create_seo_data_table,create_backlink_table,save_backlink,create_table_master_seo_link,save_seo_data
 from action.fetch_api_key import fetch_api_key, clear_api_key_db
 from action.run_SEO_llm import run_SEO_llm
+from action.redis_queue import RedisQueue
 import time
+import pandas as pd
+from io import StringIO
 
+
+
+seo_tasks_queue = RedisQueue("seo_tasks")
 # # Create SEO data table if it doesn't exist
 # backlink = create_backlink_table()
 # master_seo = create_table_master_seo_link()
@@ -27,6 +32,128 @@ import time
 #     st.error("Failed to create SEO data table")
 
 
+
+def try_parse_dataframe(value):
+    if isinstance(value, pd.DataFrame):
+        return value
+    if isinstance(value, str):
+        # Try to detect the format from the string structure
+        try:
+            # If the string is already a formatted table, parse it
+            if "\n" in value and (value.count("\t") > 0 or value.count("  ") > 0):
+                df = pd.read_csv(StringIO(value), sep=None, engine='python')
+                return df
+            else:
+                # Try as JSON or other formats
+                return pd.read_json(StringIO(value))
+        except Exception:
+            pass
+    return None
+
+def collect_tables(processed_array):
+    tables = {
+        "clicks_of_words": [],
+        "top15": [],
+        "GSC_top_KW": []
+    }
+    
+    for item in processed_array:
+        if isinstance(item, dict):
+            for key in tables.keys():
+                if key in item and item[key] is not None:
+                    df = try_parse_dataframe(item[key])
+                    if df is not None and not df.empty:
+                        tables[key].append(df)
+    
+    return tables
+
+def combine_and_aggregate_tables(tables):
+    combined_tables = {}
+    
+    # Process clicks_of_words tables
+    if tables["clicks_of_words"]:
+        dfs_with_columns = []
+        for df in tables["clicks_of_words"]:
+            if len(df.columns) >= 2:  # Ensure there are at least 2 columns
+                # Check column names and create a standardized DataFrame
+                if "word" in df.columns and "clicks" in df.columns:
+                    dfs_with_columns.append(df[["word", "clicks"]])
+                else:
+                    # Create new DataFrame with standard column names
+                    dfs_with_columns.append(pd.DataFrame({
+                        "word": df.iloc[:, 0] if df.shape[1] > 0 else [],
+                        "clicks": df.iloc[:, 1] if df.shape[1] > 1 else []
+                    }))
+        
+        if dfs_with_columns:
+            combined_df = pd.concat(dfs_with_columns, ignore_index=True)
+            # Convert to ensure proper grouping (in case of mixed types)
+            combined_df["word"] = combined_df["word"].astype(str)
+            aggregated_df = combined_df.groupby("word", as_index=False)["clicks"].sum()
+            combined_tables["clicks_of_words"] = aggregated_df.sort_values("clicks", ascending=False)
+    
+    # Process top15 tables
+    if tables["top15"]:
+        dfs_with_columns = []
+        for df in tables["top15"]:
+            if df.shape[1] >= 2:  # Ensure DataFrame has at least 2 columns
+                # Check if column names exist or are numeric
+                if 0 in df.columns and 1 in df.columns:
+                    # Create new DataFrame with standard column names
+                    dfs_with_columns.append(pd.DataFrame({
+                        "word": df[0],
+                        "freq": df[1]
+                    }))
+                elif "word" in df.columns and "freq" in df.columns:
+                    dfs_with_columns.append(df[["word", "freq"]])
+                else:
+                    # Use the first two columns whatever they're called
+                    dfs_with_columns.append(pd.DataFrame({
+                        "word": df.iloc[:, 0],
+                        "freq": df.iloc[:, 1]
+                    }))
+        
+        if dfs_with_columns:
+            combined_df = pd.concat(dfs_with_columns, ignore_index=True)
+            # Convert to ensure proper grouping
+            combined_df["word"] = combined_df["word"].astype(str)
+            aggregated_df = combined_df.groupby("word", as_index=False)["freq"].sum()
+            combined_tables["top15"] = aggregated_df.sort_values("freq", ascending=False)
+    
+    # Process GSC_top_KW tables
+    if tables["GSC_top_KW"]:
+        dfs_with_columns = []
+        for df in tables["GSC_top_KW"]:
+            if df.shape[1] >= 2:  # Ensure DataFrame has at least 2 columns
+                if "keyword" in df.columns and "clicks" in df.columns:
+                    dfs_with_columns.append(df[["keyword", "clicks"]])
+                else:
+                    # Create new DataFrame with standard column names
+                    dfs_with_columns.append(pd.DataFrame({
+                        "keyword": df.iloc[:, 0],
+                        "clicks": df.iloc[:, 1]
+                    }))
+        
+        if dfs_with_columns:
+            combined_df = pd.concat(dfs_with_columns, ignore_index=True)
+            # Convert to ensure proper grouping
+            combined_df["keyword"] = combined_df["keyword"].astype(str)
+            aggregated_df = combined_df.groupby("keyword", as_index=False)["clicks"].sum()
+            combined_tables["GSC_top_KW"] = aggregated_df.sort_values("clicks", ascending=False)
+    
+    return combined_tables
+
+
+def get_total_calculation(processed_array):
+    # Collect all tables by type
+    print(f"Processing array: {processed_array}")
+    tables = collect_tables(processed_array)
+    print(f"Tables collected: {tables}")
+    # Combine and aggregate tables
+    combined_tables = combine_and_aggregate_tables(tables)
+    print(f"Combined tables: {combined_tables}")
+    
+    return combined_tables
 
 
 async def translate_text(text, target_language='en'):
@@ -64,9 +191,9 @@ def get_data(backlink_url):
         if data:
             i["data"] = data
         else:
-            st.error(f"Failed to fetch data for link: {i['link']}")
-    st.write("Data fetched successfully...")
-    st.write("Translating data...")
+            print(f"Failed to fetch data for link: {i['link']}")
+    print(f"Data fetched successfully...{backlink_url}")
+    print(f"Translating data...{backlink_url}")
     async def translate_all_data():
         for i in processed_array:
             if "title" in i:
@@ -78,10 +205,10 @@ def get_data(backlink_url):
                             j["keys"][k] = await translate_text(j["keys"][k])
     # Run the async function
     asyncio.run(translate_all_data())
-    st.write("Translating data done...")
+    print(f"Translating data done...{backlink_url}")
     conn, cursor = connect_to_db()
     # Process data after translation
-    st.write("Processing data...")
+    print(f"Processing data...{backlink_url}")
     backlink_id = save_backlink(backlink_url)
     for i in processed_array:
         link = i["link"]
@@ -93,6 +220,7 @@ def get_data(backlink_url):
         i["top15"] = top15
         i["GSC_top_KW"] = GSC_top_KW
         # Save the processed data to the database
+        print(f"Saving data to database...{backlink_url}")
         save_seo_data(
             backlink_id=backlink_id,
             link=link,
@@ -102,13 +230,16 @@ def get_data(backlink_url):
             top15=top15,
             gsc_top_kw=GSC_top_KW
         )
-    st.write("Data processing done...")
-    st.write("Translating done...")
+        print(f"Data saved to database...{backlink_url}")
+    print(f"Data processing done...{backlink_url}")
+    print(f"Calculating total data...{backlink_url}")
     final_data =  get_total_calculation(processed_array)
+    print(f"Total data calculated...{final_data}")
+    print(f"Final data calculation done...{backlink_url}")
     run_SEO_llm(
-        backlink_id,
-        conn,
-        cursor,
+        backlink_id=backlink_id,
+        conn=conn,
+        cursor=cursor,
         input_link=backlink_url,
         query_data=processed_array[0]["data"],
         current_title=print(processed_array[0]["title"]),
@@ -116,7 +247,7 @@ def get_data(backlink_url):
         top_15_KW=final_data["top15"],
         GSC_Top_KW_Clicks=final_data["GSC_top_KW"],
     )
-    st.write("Total calculation done...")
+    print(f"Total calculation done...{backlink_url}")
 
 
 
@@ -138,6 +269,88 @@ def get_data_from_excel(excel_file):
 
 
 
+# if st.button("Clear ALL Tables"):
+#     def clear_all_tables():
+#         conn, cursor = connect_to_db()
+#         if not conn or not cursor:
+#             st.error("Failed to connect to the database")
+#             return
+#         try:
+#             # Clear all tables
+#             cursor.execute("DELETE FROM seo_data")
+#             cursor.execute("DELETE FROM master_seo_link")
+#             cursor.execute("DELETE FROM backlinks")
+#             conn.commit()
+#             st.success("All tables cleared successfully!")
+#         except Exception as e:
+#             st.error(f"Error clearing tables: {e}")
+#         finally:
+#             if conn:
+#                 conn.close()
+    
+#     clear_all_tables()
+#     st.success("All tables cleared successfully!")
+
+
+
+
+
+
+def get_all_tables():
+    st.header("Database Tables")
+    
+    conn, cursor = connect_to_db()
+    if not conn or not cursor:
+        st.error("Failed to connect to the database")
+        return
+    
+    try:
+        # Get list of all tables
+        cursor.execute("SHOW TABLES")
+        tables = cursor.fetchall()
+        
+        if not tables:
+            st.warning("No tables found in the database")
+            return
+        
+        for table in tables:
+            # Handle both list-like and dictionary-like fetch results
+            if isinstance(table, dict):
+                # If dictionary result (cursor with dictionary=True)
+                table_name = list(table.values())[0]
+            else:
+                # If tuple/list result
+                table_name = table[0]
+                
+            st.subheader(f"Table: {table_name}")
+            
+            # Get all rows from the table
+            try:
+                cursor.execute(f"SELECT * FROM {table_name}")
+                rows = cursor.fetchall()
+                
+                if not rows:
+                    st.info(f"No data in table {table_name}")
+                    continue
+                
+                # Get column names
+                columns = [desc[0] for desc in cursor.description]
+                
+                # Convert to DataFrame for better display
+                df = pd.DataFrame(rows, columns=columns)
+                st.dataframe(df)
+                st.markdown("---")
+            except Exception as table_error:
+                st.error(f"Error fetching data from table {table_name}: {table_error}")
+            
+    except Exception as e:
+        st.error(f"Error fetching tables: {repr(e)}")
+    finally:
+        if conn:
+            conn.close()
+
+if st.sidebar.button("View All wewTables"):
+    get_all_tables()
 
 
 
@@ -170,7 +383,10 @@ def backlink_form():
                         st.write(f"Processing backlink URL: {backlink_url}")
                         start_time = time.time()
                         with st.spinner('Processing data... This may take a while'):
-                            get_data(backlink_url)
+                            # get_data(backlink_url)
+                            success = seo_tasks_queue.enqueue({"url":backlink_url})
+                            if success:
+                                st.success(f"Backlink URL {backlink_url} added to the queue successfully!")
                             execution_time = time.time() - start_time
                             st.success(f"Processing completed in {execution_time:.2f} seconds")
 
@@ -178,6 +394,37 @@ backlink_form()
 
 
 
+
+
+
+def process_seo_task(task_data):
+    """Process an SEO task (example function)"""
+    print(f"Processing SEO analysis for {task_data['url']}")
+    get_data(task_data["url"])
+    return {"status": "completed", "url": task_data["url"]}
+
+
+
+
+def run_worker():
+    """Run a worker process that processes tasks from the queue"""
+    print("Starting SEO analysis worker...")
+    while True:
+        # Block until a task is available
+        task = seo_tasks_queue.dequeue(timeout=0)  # 0 means block indefinitely
+        
+        if task:
+            print(f"Received task: {task}")
+            try:
+                result = process_seo_task(task)
+                print(f"Task completed: {result}")
+            except Exception as e:
+                print(f"Error processing task: {e}")
+        else:
+            print("No task available or error occurred")
+            time.sleep(1)  # Prevent CPU spinning
+
+run_worker()
 
 # if st.button("getSEOdata"):
 #     def get_seo_data():
@@ -210,27 +457,7 @@ backlink_form()
     
     
     
-# if st.button("Clear ALL Tables"):
-#     def clear_all_tables():
-#         conn, cursor = connect_to_db()
-#         if not conn or not cursor:
-#             st.error("Failed to connect to the database")
-#             return
-#         try:
-#             # Clear all tables
-#             cursor.execute("DELETE FROM seo_data")
-#             cursor.execute("DELETE FROM master_seo_link")
-#             cursor.execute("DELETE FROM backlinks")
-#             conn.commit()
-#             st.success("All tables cleared successfully!")
-#         except Exception as e:
-#             st.error(f"Error clearing tables: {e}")
-#         finally:
-#             if conn:
-#                 conn.close()
-    
-#     clear_all_tables()
-#     st.success("All tables cleared successfully!")
+
 
 
 
@@ -257,3 +484,6 @@ backlink_form()
 #                 conn.close()
     
 #     delete_row()
+
+
+

@@ -66,24 +66,35 @@ def get_seo_master_data(id):
                 conn.close()
 
 
-def download_excel(data, sheet_name,button_label="Download Summary Excel Sheet"):
+def download_excel(data, sheet_name, button_label="Download Summary Excel Sheet"):
+    # Check if data is None
+    if data is None:
+        st.warning(f"No data available for {sheet_name}")
+        return
+    
     # Remove empty dicts/rows
     if isinstance(data, dict):
         data = [data]
     # Filter out empty dicts
     filtered_data = [row for row in data if any(row.values())]
     df = pd.DataFrame(filtered_data)
-    # Create Excel in memory
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False, sheet_name='Summary')
-    excel_data = output.getvalue()
-    st.download_button(
-        label=button_label,
-        data=excel_data,
-        file_name=f"{sheet_name}_summary.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+    
+    # Check if filtered data is empty
+    if filtered_data:
+        # Create Excel in memory
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df.to_excel(writer, index=False, sheet_name='Summary')
+        excel_data = output.getvalue()
+        st.download_button(
+            label=button_label,
+            data=excel_data,
+            file_name=f"{sheet_name}_summary.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    else:
+        st.warning(f"No data available for {sheet_name} after filtering")
+        return
 
 
 
@@ -97,27 +108,54 @@ if not backlinks:
     st.sidebar.warning("No backlinks found. Please run the backlink processing first.")
 else:
     for i, backlink in enumerate(backlinks):
-        link_text = backlink[1] if isinstance(backlink, tuple) else backlink['backlink']
+        # Handle both tuple and dictionary formats
+        if isinstance(backlink, tuple):
+            link_text = backlink[1]
+            backlink_id = backlink[0]  # Assuming ID is at index 0
+        else:
+            link_text = backlink.get('backlink', 'Unknown')
+            backlink_id = backlink.get('id')
+        
         truncated_text = link_text[:30] + "..." if len(link_text) > 30 else link_text
         if st.sidebar.button(f"{i+1}: {truncated_text}", key=f"backlink_{i}", use_container_width=True):
             st.write(f"Data of backlink: {link_text}")
-            seo = get_seo_data(backlink["id"])
-            seo_master = get_seo_master_data(backlink["id"])
-            download_excel(seo, f"SEO_Data_{backlink['id']}", button_label="Download SEO Excel")
-            download_excel(seo_master, f"SEO_Master_Data_{backlink['id']}", button_label="Download SEO Master Excel")
+            seo = get_seo_data(backlink_id)
+            seo_master = get_seo_master_data(backlink_id)
+            
+            # Only call download_excel if data is available
+            download_excel(seo, f"SEO_Data_{backlink_id}", button_label="Download SEO Excel")
+            download_excel(seo_master, f"SEO_Master_Data_{backlink_id}", button_label="Download SEO Master Excel")
+            
             st.title("Response:🤖")
             if seo_master and len(seo_master) > 0:
                 st.write(seo_master[0]["response"])
             else:
                 st.warning("No response data found")
     with st.expander(f"List of Backlinks"):
-            seo = get_seo_data(backlinks[0]["id"])
-            if not seo:
-                st.warning("No SEO data found for the selected backlink.")
-            else:
-                for i, seo_data in enumerate(seo):
-                    st.write(f"Link {i+1}: {seo_data['link']}")
-                    download_excel(seo_data, f"SEO_Data_{seo_data['id']}", button_label="Download Excel Data")
+            # Get the first backlink ID safely
+            if backlinks and len(backlinks) > 0:
+                first_backlink = backlinks[0]
+                first_backlink_id = first_backlink[0] if isinstance(first_backlink, tuple) else first_backlink.get('id')
                 
+                if first_backlink_id:
+                    seo = get_seo_data(first_backlink_id)
+                    if not seo:
+                        st.warning("No SEO data found for the selected backlink.")
+                    else:
+                        for i, seo_data in enumerate(seo):
+                            try:
+                                link = seo_data['link'] if isinstance(seo_data, dict) else seo_data[2]  # Adjust index as needed based on data structure
+                                seo_id = seo_data['id'] if isinstance(seo_data, dict) else seo_data[0]
+                                st.write(f"Link {i+1}: {link}")
+                                download_excel(seo_data, f"SEO_Data_{seo_id}", button_label="Download Excel Data")
+                            except (KeyError, IndexError, TypeError) as e:
+                                st.warning(f"Error displaying data for item {i+1}: {e}")
+                else:
+                    st.warning("Could not determine ID for the first backlink")
+            else:
+                st.warning("No backlinks available")
+                
+
+
 
 

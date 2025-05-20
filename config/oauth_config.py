@@ -1,5 +1,4 @@
-oauth ={
-}
+oauth ={}
 
 
 

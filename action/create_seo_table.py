@@ -138,7 +138,7 @@ def save_seo_data(backlink_id,link, title, query_data, clicks_of_words, top15, g
         INSERT INTO seo_data (backlink_id, link, title, query_data, clicks_of_words, top15, gsc_top_kw)
         VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
-        st.write(f"Saving data for backlink ID {backlink_id}: {link}, {title} with query data {query_data_json}, clicks of words {clicks_of_words}, top15 {top15}, GSC top KW {gsc_top_kw}")
+        print(f"Saving data for backlink ID {backlink_id}: {link}, {title} with query data {query_data_json}, clicks of words {clicks_of_words}, top15 {top15}, GSC top KW {gsc_top_kw}")
         cursor.execute(insert_query, (backlink_id, link, title, to_str(query_data_json), to_str(clicks_of_words), to_str(top15), to_str(gsc_top_kw)))
         conn.commit()
         return True

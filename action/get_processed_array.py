@@ -26,18 +26,12 @@ def get_processed_array(link_title):
     """
     Process the link_title array to create a new array with the desired format.
     """
-    processed_array = []
     token = access_token()
-    for item in link_title:
-        data = fetch_data_from_link(item["link"],webmaster_access_token=token)
-        if data:
-            # Extract the required fields from the data
-            processed_item = {
-                "link": item["link"],
-                "title": item["title"],
-                "query_data": data
-            }
-            processed_array.append(processed_item)
-        else:
-            st.error(f"Failed to fetch data for link: {item['link']}")
-    return processed_array
+    data = fetch_data_from_link(link_title["link"],webmaster_access_token=token)
+    if data:
+        processed_item = {
+            "link": link_title["link"],
+            "title": link_title["title"],
+            "query_data": data
+        }
+    return processed_item

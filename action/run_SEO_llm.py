@@ -1,7 +1,6 @@
 from action.get_data import get_data
 from model.model import model
 from action.get_only_title import get_only_title
-import streamlit as st
 from pandas import DataFrame
 
 def run_SEO_llm(
@@ -40,15 +39,13 @@ def run_SEO_llm(
         top_15_KW:{top_15_KW}
         GSC_Top_KW_Clicks:{GSC_Top_KW_Clicks}
         """
-    st.write("LLM working on it...")
     response = model().invoke(prompt)
-    st.write("LLM finished working on it.")
-    st.write("Response from LLM:", response)
     response_content = response.content
     suggested_titles = get_only_title(response_content)
     title_1 = str(suggested_titles[0]) if len(suggested_titles) > 0 else ""
     title_2 = str(suggested_titles[1]) if len(suggested_titles) > 1 else ""
-
+    
+    print(f"reposonse",response_content)
     create_query = """
         INSERT INTO master_seo_link ( backlink_id, link, title, query_data, clicks_of_words, top15, GSC_top_KW, suggested_title_1, suggested_title_2, response)
         VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
