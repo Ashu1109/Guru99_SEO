@@ -181,13 +181,37 @@ async def translate_text(text, target_language='en'):
         return text  # Return original text in case of error
 
 def get_data(backlink_url):
+    print(f"Fetching data for {backlink_url}")
     data = get_filtered_links(backlink_url)
+    print(f"Data fetched for {backlink_url}")
     urls = []
+    
+    # Check if data is None or doesn't have 'rows' key
+    if data is None or 'rows' not in data:
+        print(f"Error: No data or 'rows' found for {backlink_url}")
+        return None
+        
     for i in data["rows"]:
-        urls.append(i["keys"][0])
-    processed_array = get_title_for_links(pd.DataFrame(urls))
+        if "keys" in i and len(i["keys"]) > 0:
+            urls.append(i["keys"][0])
+    # Check if urls list is empty
+    if not urls:
+        print(f"Error: No valid URLs found for {backlink_url}")
+        return None
+        
+    processed_array = get_title_for_links(urls)
+    
+    # Check if processed_array is None or empty
+    if not processed_array:
+        print(f"Error: No processed array data for {backlink_url}")
+        return None
+        
     for i in processed_array:
-        data = fetch_data_from_link(i["link"],webmaster_access_token=access_token())
+        if "link" not in i:
+            print(f"Error: Missing 'link' in processed item")
+            continue
+            
+        data = fetch_data_from_link(i["link"], webmaster_access_token=access_token())
         if data:
             i["data"] = data
         else:
@@ -233,20 +257,47 @@ def get_data(backlink_url):
         print(f"Data saved to database...{backlink_url}")
     print(f"Data processing done...{backlink_url}")
     print(f"Calculating total data...{backlink_url}")
-    final_data =  get_total_calculation(processed_array)
+    final_data = get_total_calculation(processed_array)
     print(f"Total data calculated...{final_data}")
     print(f"Final data calculation done...{backlink_url}")
-    run_SEO_llm(
-        backlink_id=backlink_id,
-        conn=conn,
-        cursor=cursor,
-        input_link=backlink_url,
-        query_data=processed_array[0]["data"],
-        current_title=print(processed_array[0]["title"]),
-        clicks_in_title=final_data["clicks_of_words"],
-        top_15_KW=final_data["top15"],
-        GSC_Top_KW_Clicks=final_data["GSC_top_KW"],
-    )
+    
+    # Check if final_data is None or missing required keys
+    if not final_data:
+        print(f"Error: No final data calculated for {backlink_url}")
+        return None
+        
+    # Check if processed_array has at least one item with required keys
+    if not processed_array or len(processed_array) == 0:
+        print(f"Error: No processed array data for {backlink_url}")
+        return None
+        
+    # Check if the first item in processed_array has the required keys
+    if "data" not in processed_array[0] or "title" not in processed_array[0]:
+        print(f"Error: Missing required keys in processed_array for {backlink_url}")
+        return None
+        
+    # Check if final_data has all required keys
+    required_keys = ["clicks_of_words", "top15", "GSC_top_KW"]
+    for key in required_keys:
+        if key not in final_data:
+            print(f"Error: Missing {key} in final_data for {backlink_url}")
+            final_data[key] = pd.DataFrame()  # Provide an empty DataFrame as fallback
+    
+    try:
+        run_SEO_llm(
+            backlink_id=backlink_id,
+            conn=conn,
+            cursor=cursor,
+            input_link=backlink_url,
+            query_data=processed_array[0]["data"],
+            current_title=processed_array[0]["title"],  # Removed print() call that was causing issues
+            clicks_in_title=final_data["clicks_of_words"],
+            top_15_KW=final_data["top15"],
+            GSC_Top_KW_Clicks=final_data["GSC_top_KW"],
+        )
+    except Exception as e:
+        print(f"Error running SEO LLM: {e}")
+        return None
     print(f"Total calculation done...{backlink_url}")
 
 
@@ -397,34 +448,34 @@ backlink_form()
 
 
 
-def process_seo_task(task_data):
-    """Process an SEO task (example function)"""
-    print(f"Processing SEO analysis for {task_data['url']}")
-    get_data(task_data["url"])
-    return {"status": "completed", "url": task_data["url"]}
+# def process_seo_task(task_data):
+#     """Process an SEO task (example function)"""
+#     print(f"Processing SEO analysis for {task_data['url']}")
+#     get_data(task_data["url"])
+#     return {"status": "completed", "url": task_data["url"]}
 
 
 
 
-def run_worker():
-    """Run a worker process that processes tasks from the queue"""
-    print("Starting SEO analysis worker...")
-    while True:
-        # Block until a task is available
-        task = seo_tasks_queue.dequeue(timeout=0)  # 0 means block indefinitely
+# def run_worker():
+#     """Run a worker process that processes tasks from the queue"""
+#     print("Starting SEO analysis worker...")
+#     while True:
+#         # Block until a task is available
+#         task = seo_tasks_queue.dequeue(timeout=0)  # 0 means block indefinitely
         
-        if task:
-            print(f"Received task: {task}")
-            try:
-                result = process_seo_task(task)
-                print(f"Task completed: {result}")
-            except Exception as e:
-                print(f"Error processing task: {e}")
-        else:
-            print("No task available or error occurred")
-            time.sleep(1)  # Prevent CPU spinning
+#         if task:
+#             print(f"Received task: {task}")
+#             try:
+#                 result = process_seo_task(task)
+#                 print(f"Task completed: {result}")
+#             except Exception as e:
+#                 print(f"Error processing task: {e}")
+#         else:
+#             print("No task available or error occurred")
+#             time.sleep(1)  # Prevent CPU spinning
 
-run_worker()
+# run_worker()
 
 # if st.button("getSEOdata"):
 #     def get_seo_data():

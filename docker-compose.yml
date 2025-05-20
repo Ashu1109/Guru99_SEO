@@ -12,6 +12,36 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
 
+  worker_upload_excel:
+    build:
+      context: .
+      dockerfile: Dockerfile.upload_excel
+    ports:
+      - "8502:8502"
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+  worker_backlink:
+    build:
+      context: .
+      dockerfile: Dockerfile.backlink
+    ports:
+      - "8503:8503"
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
   redis:
     image: redis:alpine
     ports:
