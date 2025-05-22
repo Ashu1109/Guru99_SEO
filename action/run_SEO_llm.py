@@ -8,7 +8,6 @@ def run_SEO_llm(
     conn,
     cursor,
     input_link: str,
-    query_data: str,
     current_title: DataFrame,
     clicks_in_title: DataFrame,
     top_15_KW: DataFrame,
@@ -47,8 +46,8 @@ def run_SEO_llm(
     
     print(f"reposonse",response_content)
     create_query = """
-        INSERT INTO master_seo_link ( backlink_id, link, title, query_data, clicks_of_words, top15, GSC_top_KW, suggested_title_1, suggested_title_2, response)
-        VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO master_seo_link ( backlink_id, link, title, clicks_of_words, top15, GSC_top_KW, suggested_title_1, suggested_title_2, response)
+        VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         
     if isinstance(clicks_in_title, DataFrame):
@@ -79,7 +78,6 @@ def run_SEO_llm(
         backlink_id,
         input_link,
         to_str(current_title),
-        to_str(query_data),
         to_str(clicks_in_title),
         to_str(top_15_KW),
         to_str(GSC_Top_KW_Clicks),

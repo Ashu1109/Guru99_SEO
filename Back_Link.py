@@ -289,7 +289,6 @@ def get_data(backlink_url):
             conn=conn,
             cursor=cursor,
             input_link=backlink_url,
-            query_data=processed_array[0]["data"],
             current_title=processed_array[0]["title"],  # Removed print() call that was causing issues
             clicks_in_title=final_data["clicks_of_words"],
             top_15_KW=final_data["top15"],
@@ -320,88 +319,60 @@ def get_data_from_excel(excel_file):
 
 
 
-# if st.button("Clear ALL Tables"):
-#     def clear_all_tables():
-#         conn, cursor = connect_to_db()
-#         if not conn or not cursor:
-#             st.error("Failed to connect to the database")
-#             return
-#         try:
-#             # Clear all tables
-#             cursor.execute("DELETE FROM seo_data")
-#             cursor.execute("DELETE FROM master_seo_link")
-#             cursor.execute("DELETE FROM backlinks")
-#             conn.commit()
-#             st.success("All tables cleared successfully!")
-#         except Exception as e:
-#             st.error(f"Error clearing tables: {e}")
-#         finally:
-#             if conn:
-#                 conn.close()
+if st.button("Clear ALL Tables"):
+    def clear_all_tables():
+        conn, cursor = connect_to_db()
+        if not conn or not cursor:
+            st.error("Failed to connect to the database")
+            return
+        try:
+            # Clear all tables
+            cursor.execute("DELETE FROM seo_data")
+            cursor.execute("DELETE FROM master_seo_link")
+            cursor.execute("DELETE FROM backlinks")
+            conn.commit()
+            st.success("All tables cleared successfully!")
+        except Exception as e:
+            st.error(f"Error clearing tables: {e}")
+        finally:
+            if conn:
+                conn.close()
     
-#     clear_all_tables()
-#     st.success("All tables cleared successfully!")
+    clear_all_tables()
+    st.success("All tables cleared successfully!")
 
 
-
-
-
-
-def get_all_tables():
-    st.header("Database Tables")
-    
+def fetch_all_tables():
     conn, cursor = connect_to_db()
     if not conn or not cursor:
         st.error("Failed to connect to the database")
         return
-    
     try:
-        # Get list of all tables
-        cursor.execute("SHOW TABLES")
+        # Fetch all tables
+        cursor.execute("SHOW TABLES;")
         tables = cursor.fetchall()
-        
-        if not tables:
-            st.warning("No tables found in the database")
-            return
-        
-        for table in tables:
-            # Handle both list-like and dictionary-like fetch results
-            if isinstance(table, dict):
-                # If dictionary result (cursor with dictionary=True)
+        if tables:
+            st.write("Tables in the database:")
+            for table in tables:
                 table_name = list(table.values())[0]
-            else:
-                # If tuple/list result
-                table_name = table[0]
-                
-            st.subheader(f"Table: {table_name}")
-            
-            # Get all rows from the table
-            try:
-                cursor.execute(f"SELECT * FROM {table_name}")
-                rows = cursor.fetchall()
-                
-                if not rows:
-                    st.info(f"No data in table {table_name}")
-                    continue
-                
-                # Get column names
+                st.subheader(f"Table: {table_name}")
+                cursor.execute(f"SELECT * FROM {table_name};")
+                data = cursor.fetchall()
                 columns = [desc[0] for desc in cursor.description]
-                
-                # Convert to DataFrame for better display
-                df = pd.DataFrame(rows, columns=columns)
+                df = pd.DataFrame(data, columns=columns)
                 st.dataframe(df)
-                st.markdown("---")
-            except Exception as table_error:
-                st.error(f"Error fetching data from table {table_name}: {table_error}")
-            
+        else:
+            st.write("No tables found in the database.")
     except Exception as e:
-        st.error(f"Error fetching tables: {repr(e)}")
+        st.error(f"Error fetching tables: {e}")
     finally:
         if conn:
             conn.close()
+    
+if st.button("Fetch All Tables"):
+    fetch_all_tables()
 
-if st.sidebar.button("View All wewTables"):
-    get_all_tables()
+
 
 
 

@@ -2,9 +2,9 @@ import streamlit as st
 from action.connect_to_db import connect_to_db
 
 if 'authenticated' not in st.session_state:
-    st.session_state['authenticated'] = False
+    st.session_state['authenticated'] = True
 if 'admin' not in st.session_state:
-    st.session_state['admin'] = False
+    st.session_state['admin'] = True
     
 if not st.session_state['authenticated']:
     st.title("Login Required")

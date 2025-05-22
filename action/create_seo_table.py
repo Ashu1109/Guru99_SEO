@@ -85,10 +85,10 @@ def create_seo_data_table():
                     backlink_id INT,
                     link VARCHAR(500),
                     title VARCHAR(500),
-                    query_data TEXT,
-                    clicks_of_words TEXT,
-                    top15 TEXT,
-                    GSC_top_KW TEXT,
+                    query_data LONGTEXT,
+                    clicks_of_words LONGTEXT,
+                    top15 LONGTEXT,
+                    GSC_top_KW LONGTEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (backlink_id) REFERENCES backlinks(id)
                 );
@@ -169,13 +169,12 @@ def create_table_master_seo_link():
                     backlink_id INT,
                     link VARCHAR(500),
                     title VARCHAR(500),
-                    query_data TEXT,
-                    clicks_of_words TEXT,
-                    top15 TEXT,
-                    GSC_top_KW TEXT,
+                    clicks_of_words LONGTEXT,
+                    top15 LONGTEXT,
+                    GSC_top_KW LONGTEXT,
                     suggested_title_1 VARCHAR(500),
                     suggested_title_2 VARCHAR(500),
-                    response TEXT,
+                    response LONGTEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (backlink_id) REFERENCES backlinks(id)
                 );
