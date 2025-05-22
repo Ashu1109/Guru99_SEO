@@ -319,58 +319,58 @@ def get_data_from_excel(excel_file):
 
 
 
-if st.button("Clear ALL Tables"):
-    def clear_all_tables():
-        conn, cursor = connect_to_db()
-        if not conn or not cursor:
-            st.error("Failed to connect to the database")
-            return
-        try:
-            # Clear all tables
-            cursor.execute("DELETE FROM seo_data")
-            cursor.execute("DELETE FROM master_seo_link")
-            cursor.execute("DELETE FROM backlinks")
-            conn.commit()
-            st.success("All tables cleared successfully!")
-        except Exception as e:
-            st.error(f"Error clearing tables: {e}")
-        finally:
-            if conn:
-                conn.close()
+# if st.button("Clear ALL Tables"):
+#     def clear_all_tables():
+#         conn, cursor = connect_to_db()
+#         if not conn or not cursor:
+#             st.error("Failed to connect to the database")
+#             return
+#         try:
+#             # Clear all tables
+#             cursor.execute("DELETE FROM seo_data")
+#             cursor.execute("DELETE FROM master_seo_link")
+#             cursor.execute("DELETE FROM backlinks")
+#             conn.commit()
+#             st.success("All tables cleared successfully!")
+#         except Exception as e:
+#             st.error(f"Error clearing tables: {e}")
+#         finally:
+#             if conn:
+#                 conn.close()
     
-    clear_all_tables()
-    st.success("All tables cleared successfully!")
+#     clear_all_tables()
+#     st.success("All tables cleared successfully!")
 
 
-def fetch_all_tables():
-    conn, cursor = connect_to_db()
-    if not conn or not cursor:
-        st.error("Failed to connect to the database")
-        return
-    try:
-        # Fetch all tables
-        cursor.execute("SHOW TABLES;")
-        tables = cursor.fetchall()
-        if tables:
-            st.write("Tables in the database:")
-            for table in tables:
-                table_name = list(table.values())[0]
-                st.subheader(f"Table: {table_name}")
-                cursor.execute(f"SELECT * FROM {table_name};")
-                data = cursor.fetchall()
-                columns = [desc[0] for desc in cursor.description]
-                df = pd.DataFrame(data, columns=columns)
-                st.dataframe(df)
-        else:
-            st.write("No tables found in the database.")
-    except Exception as e:
-        st.error(f"Error fetching tables: {e}")
-    finally:
-        if conn:
-            conn.close()
+# def fetch_all_tables():
+#     conn, cursor = connect_to_db()
+#     if not conn or not cursor:
+#         st.error("Failed to connect to the database")
+#         return
+#     try:
+#         # Fetch all tables
+#         cursor.execute("SHOW TABLES;")
+#         tables = cursor.fetchall()
+#         if tables:
+#             st.write("Tables in the database:")
+#             for table in tables:
+#                 table_name = list(table.values())[0]
+#                 st.subheader(f"Table: {table_name}")
+#                 cursor.execute(f"SELECT * FROM {table_name};")
+#                 data = cursor.fetchall()
+#                 columns = [desc[0] for desc in cursor.description]
+#                 df = pd.DataFrame(data, columns=columns)
+#                 st.dataframe(df)
+#         else:
+#             st.write("No tables found in the database.")
+#     except Exception as e:
+#         st.error(f"Error fetching tables: {e}")
+#     finally:
+#         if conn:
+#             conn.close()
     
-if st.button("Fetch All Tables"):
-    fetch_all_tables()
+# if st.button("Fetch All Tables"):
+#     fetch_all_tables()
 
 
 
