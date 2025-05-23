@@ -1,5 +1,5 @@
 from action.redis_queue import RedisQueue
-from Back_Link import get_data
+from MultiLingual_Link import get_data
 import time
 
 seo_tasks_queue = RedisQueue("seo_tasks")
