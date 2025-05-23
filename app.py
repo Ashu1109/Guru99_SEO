@@ -2,9 +2,9 @@ import streamlit as st
 from action.connect_to_db import connect_to_db
 
 if 'authenticated' not in st.session_state:
-    st.session_state['authenticated'] = True
+    st.session_state['authenticated'] = False
 if 'admin' not in st.session_state:
-    st.session_state['admin'] = True
+    st.session_state['admin'] = False
     
 if not st.session_state['authenticated']:
     st.title("Login Required")
@@ -25,7 +25,7 @@ if not st.session_state['authenticated']:
             st.error("Incorrect password. Access denied.")
 else:
     if st.session_state["admin"]:
-        pg = st.navigation(["Upload_Excel.py","Analysis_Result.py","Back_Link.py","Back_Link_Result.py","Admin.py"])
+        pg = st.navigation(["Single_Language.py","Single_Language_Result.py" ,"MultiLingual_Link.py","MultiLingual_Result.py","Admin.py"])
     else:
-        pg = st.navigation(["Upload_Excel.py","Analysis_Result.py","Back_Link.py","Back_Link_Result.py"])
+        pg = st.navigation(["Single_Language.py","Single_Language_Result.py" ,"MultiLingual_Link.py","MultiLingual_Result.py"])
     pg.run()
